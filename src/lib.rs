@@ -123,11 +123,7 @@ impl Log for VLogger {
                 record.location().module_path().to_string()
             };
 
-            if record.level() <= LogLevel::Warn {
-                let _ = writeln!(&mut io::stderr(), "{}: {}", level, record.args());
-            } else {
-                println!("{}: {}", level, record.args());
-            }
+            let _ = writeln!(&mut io::stderr(), "{}: {}", level, record.args());
         }
     }
 }

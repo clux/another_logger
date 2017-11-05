@@ -116,7 +116,9 @@ impl Log for VLogger {
     fn log(&self, record: &LogRecord) {
         if self.enabled(record.metadata()) {
             let level = if self.colors {
-                level_style(record.level()).paint(record.location().module_path()).to_string()
+                level_style(record.level())
+                    .paint(record.location().module_path())
+                    .to_string()
             } else {
                 record.location().module_path().to_string()
             };

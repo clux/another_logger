@@ -10,8 +10,13 @@
 //!
 //! The default configuration colorizes the "tag" portion of the log statement, where the tag is
 //! the text to the left of a separator, defaulted as the colon (`:`). The message is the
-//! portion to the right of the separator and it is _not_ ever colorized. The tag includes only the
+//! portion to the right of the separator and it is never colorized. The tag includes only the
 //! module path and the separator by default.
+//!
+//! The base and default level is inherited from the environment via the `RUST_LOG` environment variable.
+//! The log level is calculated from the base level and the verbosity. In other words, logging is
+//! first controlled by the environment and then overriden with any command line arguments or
+//! compile-time configurations.
 //!
 //! ## Example
 //!
@@ -92,11 +97,11 @@
 //!
 //! fn main() {
 //!     let args = App::new("app")
-//!                    .arg(Arg::with_name("v")
-//!                             .short("v")
-//!                             .multiple(true)
-//!                             .help("Sets the level of verbosity"))
-//!                    .get_matches();
+//!         .arg(Arg::with_name("v")
+//!             .short("v")
+//!             .multiple(true)
+//!             .help("Sets the level of verbosity"))
+//!         .get_matches();
 //!
 //!     loggerv::Logger::new()
 //!         .verbosity(args.occurrences_of("v"))
@@ -202,7 +207,7 @@ pub struct Logger {
 impl Logger {
     /// Creates a new instance of the verbosity-based logger.
     ///
-    /// The default level is WARN. Color is enabled if the parent application or library is running
+    /// The default level is ERROR. Color is enabled if the parent application or library is running
     /// from a terminal, i.e. running a tty. The default separator is the ": " string. The default
     /// output format is `module path: message`. The following default colors are used:
     ///

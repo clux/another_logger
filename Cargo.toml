@@ -40,3 +40,7 @@ path = "examples/cfg_config.rs"
 name = "output-config"
 path = "examples/output_config.rs"
 
+[[example]]
+name = "filters"
+path = "examples/filters.rs"
+

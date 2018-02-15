@@ -216,7 +216,7 @@ impl Logger {
     /// | Trace | Grey          |
     pub fn new() -> Logger {
         Logger {
-            builder: Builder::new(),
+            builder: Builder::from_env("RUST_LOG"),
             colors: DEFAULT_COLORS && atty::is(atty::Stream::Stdout) && atty::is(atty::Stream::Stderr),
             include_level: DEFAULT_INCLUDE_LEVEL,
             include_line_numbers: DEFAULT_INCLUDE_LINE_NUMBERS,

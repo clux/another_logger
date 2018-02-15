@@ -14,10 +14,11 @@ readme = "README.md"
 [dependencies]
 atty = "0.2.2"
 ansi_term = "0.10"
+env_logger = "0.5"
 log = { version = "0.4", features = ["std"] }
 
 [dev-dependencies]
-clap = "2.1.2"
+clap = "2.1"
 
 [[example]]
 name = "quick"
@@ -38,4 +39,8 @@ path = "examples/cfg_config.rs"
 [[example]]
 name = "output-config"
 path = "examples/output_config.rs"
+
+[[example]]
+name = "filters"
+path = "examples/filters.rs"
 

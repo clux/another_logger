@@ -190,7 +190,6 @@ pub struct Logger {
     include_level: bool,
     include_line_numbers: bool,
     include_module_path: bool,
-    offset: u64,
     separator: String,
     verbosity: Option<u64>,
     error: Level,
@@ -221,7 +220,6 @@ impl Logger {
             include_level: DEFAULT_INCLUDE_LEVEL,
             include_line_numbers: DEFAULT_INCLUDE_LINE_NUMBERS,
             include_module_path: DEFAULT_INCLUDE_MODULE_PATH,
-            offset: DEFAULT_OFFSET,
             separator: String::from(DEFAULT_SEPARATOR),
             verbosity: None,
             error: Level {
@@ -491,62 +489,6 @@ impl Logger {
         self
     }
 
-    /// Sets the base level.
-    ///
-    /// The base level is the level used with zero (0) verbosity. The default is WARN. So, ERROR
-    /// and WARN statements will be written and INFO statements will be written with a verbosity of
-    /// 1 or greater. If the base level was changed to ERROR, then only ERROR statements will be
-    /// written and WARN statements will be written with a verbosity of 1 or greater. Use this
-    /// adjust the correlation of verbosity, i.e. number of `-v` occurrences, to level.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// #[macro_use] extern crate log;
-    /// extern crate loggerv;
-    ///
-    /// fn main() {
-    ///     loggerv::Logger::new()
-    ///         .base_level(log::Level::Error)
-    ///         .verbosity(0)
-    ///         .init()
-    ///         .unwrap();
-    ///
-    ///     error!("This is printed");
-    ///     warn!("This is not printed");
-    ///     info!("This is not printed");
-    /// }
-    /// ```
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// #[macro_use] extern crate log;
-    /// extern crate loggerv;
-    ///
-    /// fn main() {
-    ///     loggerv::Logger::new()
-    ///         .base_level(log::Level::Info)
-    ///         .verbosity(0)
-    ///         .init()
-    ///         .unwrap();
-    ///
-    ///     error!("This is printed");
-    ///     warn!("This is also printed");
-    ///     info!("This is now printed, too");
-    /// }
-    /// ```
-    pub fn base_level(mut self, b: log::Level) -> Self {
-        self.offset = match b {
-            log::Level::Error => 0,
-            log::Level::Warn => 1,
-            log::Level::Info => 2,
-            log::Level::Debug => 3,
-            log::Level::Trace => 4,
-        };
-        self
-    }
-
     /// Sets the output for a level.
     ///
     /// The output is either `stderr` or `stdout`. The default is for ERROR and WARN to be written
@@ -590,11 +532,10 @@ impl Logger {
         self
     }
 
-    /// Sets the level based on verbosity and the offset.
+    /// Sets the level based on verbosity and the base level inherented from the environment.
     ///
-    /// A verbosity of zero (0) is the default, which means ERROR and WARN log statements are
-    /// printed to `stderr`. No other log statements are printed on any of the standard streams
-    /// (`stdout` or `stderr`). As the verbosity is increased, the log level is increased and more
+    /// A verbosity of zero (0) indicates the default level is inherented from the environment via
+    /// the `RUST_LOG` environment variable. As the verbosity is increased, the log level is increased and more
     /// log statements will be printed to `stdout`.
     ///
     /// # Example
@@ -682,6 +623,20 @@ impl Logger {
         if !self.include_level && !self.include_line_numbers && !self.include_module_path {
             self.separator = String::new();
         }
+        // Build the filter now to get the maximum log level for calculation of the log level based
+        // on verbosity. The offset is now determined from the environment instead of a 
+        // `base_level` method. This is a temporary filter, just to get the "filter" based on the
+        // environment. The builder will be reused to adjust the filter based on verbosity.
+        // Luckily, the `build` method does not consume the builder.
+        let filter = self.builder.build();
+        let offset = match filter.filter() {
+            log::LevelFilter::Off => DEFAULT_OFFSET,
+            log::LevelFilter::Error => 0,
+            log::LevelFilter::Warn => 1,
+            log::LevelFilter::Info => 2,
+            log::LevelFilter::Debug => 3,
+            log::LevelFilter::Trace => 4,
+        };
         // The level is set based on verbosity only if the `verbosity` method has been used and
         // _not_ overridden by a later call to the `max_level` method. If neither the `verbosity` or
         // `max_level` method is used, then the level set by the environment is used because it is
@@ -693,7 +648,7 @@ impl Logger {
         // _after_ the `verbosity` method would have no effect and be difficult to communicate this
         // limitation to users.
         if let Some(v) = self.verbosity {
-            match v + self.offset {
+            match v + offset {
                 0 => self.builder.filter(None, log::Level::Error.to_level_filter()),
                 1 => self.builder.filter(None, log::Level::Warn.to_level_filter()),
                 2 => self.builder.filter(None, log::Level::Info.to_level_filter()),
@@ -720,6 +675,9 @@ impl Logger {
         let debug_output = self.debug.output.clone();
         let trace_output = self.trace.output.clone();
         let logger = InnerLogger {
+            // We need to rebuild the filter after determining the level based on verbosity. If we
+            // use the temporary `filter` variable from earlier to determine the base level, then
+            // adjustments to the filter based on the verbosity will be lost. 
             filter: self.builder.build(),
             select_output: Box::new(move |level| {
                 match *level {
@@ -865,12 +823,6 @@ mod tests {
     fn max_level_works() {
         let logger = Logger::new().max_level(log::Level::Trace);
         assert!(logger.verbosity.is_none());
-    }
-
-    #[test]
-    fn base_level_works() {
-        let logger = Logger::new().base_level(log::Level::Info);
-        assert_eq!(logger.offset, 2);
     }
 
     #[test]

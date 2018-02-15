@@ -532,9 +532,9 @@ impl Logger {
         self
     }
 
-    /// Sets the level based on verbosity and the base level inherented from the environment.
+    /// Sets the level based on verbosity and the base level inherited from the environment.
     ///
-    /// A verbosity of zero (0) indicates the default level is inherented from the environment via
+    /// A verbosity of zero (0) indicates the default level is inherited from the environment via
     /// the `RUST_LOG` environment variable. As the verbosity is increased, the log level is increased and more
     /// log statements will be printed to `stdout`.
     ///
@@ -559,6 +559,50 @@ impl Logger {
     /// ```
     pub fn verbosity(mut self, v: u64) -> Self {
         self.verbosity = Some(v);
+        self
+    }
+
+    /// Adds filters.
+    ///
+    /// The pattern and format is identical to the
+    /// [env_logger](https://docs.rs/env_logger/0.5.3/env_logger) filter syntax and implementation.
+    /// This takes a comma-separated list of logging directives. Directives are in the form:
+    ///
+    /// ```text
+    /// path::to::module=level
+    /// ```
+    ///
+    /// # Example
+    ///
+    /// The following example will print logging statements from the `hello` module at the ERROR,
+    /// WARN, and INFO levels, while logging statements from the `goodbye` module will be printed
+    /// at the ERROR level only. The `filter` method can be used for individual directives or for
+    /// a comma-separated list, where ERROR and WARN logging statements will be printed from the
+    /// `welcome` module, TRACE, DEBUG, INFO, WARN, and ERROR logging statements will be printed
+    /// from the `thank::you` module, and ERROR, WARN, INFO, and DEBUG statements will be printed
+    /// from the `bye` module.
+    ///
+    /// ```rust
+    /// #[macro_use] extern crate log;
+    /// extern crate loggerv;
+    ///
+    /// fn main() {
+    ///     loggerv::Logger::new()
+    ///         .filter("hello=info")
+    ///         .filter("goodbye=error")
+    ///         .filter("welcome=warn,thank::you=trace,bye=debug")
+    ///         .init()
+    ///         .unwrap();
+    ///     
+    ///     error!("This is printed to stderr");
+    ///     warn!("This is printed to stderr");
+    ///     info!("This is printed to stdout");
+    ///     debug!("This is not printed to stdout");
+    ///     trace!("This is not printed to stdout");
+    /// }
+    /// ```
+    pub fn filter(mut self, directives: &str) -> Self {
+        self.builder.parse(directives);
         self
     }
 

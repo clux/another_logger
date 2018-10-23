@@ -17,7 +17,7 @@ use clap::{Arg, App};
 
 fn main() {
     // Add the following line near the beginning of the main function for an application to enable
-    // colorized output on Windows 10. 
+    // colorized output on Windows 10.
     //
     // Based on documentation for the ansi_term crate, Windows 10 supports ANSI escape characters,
     // but it must be enabled first using the `ansi_term::enable_ansi_support()` function. It is
@@ -37,9 +37,11 @@ fn main() {
        .arg(Arg::with_name("no-module-path")
             .long("no-module-path")
             .help("Disables the module path in the log statements"))
-       .arg(Arg::with_name("no-color")
-            .long("no-color")
-            .help("Disables colorized output"))
+       .arg(Arg::with_name("color")
+            .long("color")
+            .possible_values(&["Auto", "Never", "Always"])
+            .default_value("Auto")
+            .help("Specify when to enable coloring. Valid options are always, never, or auto."))
        .arg(Arg::with_name("level")
             .short("l")
             .long("level")
@@ -51,7 +53,7 @@ fn main() {
         .level(args.is_present("level"))
         .line_numbers(args.is_present("debug"))
         .module_path(!args.is_present("no-module-path"))
-        .colors(!args.is_present("no-color"))
+        .colors(args.value_of("color").unwrap().into())
         .init()
         .unwrap();
 

@@ -87,7 +87,7 @@
 //! #[macro_use] extern crate log;
 //! extern crate clap;
 //! extern crate loggerv;
-//!
+//! use loggerv::{Logger, ColorMode};
 //! use clap::{Arg, App};
 //!
 //! fn main() {
@@ -98,13 +98,13 @@
 //!                             .help("Sets the level of verbosity"))
 //!                    .get_matches();
 //!
-//!     loggerv::Logger::new()
+//!     Logger::new()
 //!         .verbosity(args.occurrences_of("v"))
 //!         .level(true)
 //!         .line_numbers(true)
 //!         .separator(" = ")
 //!         .module_path(false)
-//!         .colors(false)
+//!         .colors(ColorMode::Auto)
 //!         .init()
 //!         .unwrap();
 //!
@@ -129,7 +129,7 @@ use log::{SetLoggerError};
 use std::io::{self, Write};
 use ansi_term::Colour;
 
-pub const DEFAULT_COLORS: bool = true;
+pub const DEFAULT_COLORS: ColorMode = ColorMode::Auto;
 pub const DEFAULT_DEBUG_COLOR: Colour = Colour::Fixed(7); // light grey
 pub const DEFAULT_ERROR_COLOR: Colour = Colour::Fixed(9); // bright red
 pub const DEFAULT_INCLUDE_LEVEL: bool = false;
@@ -147,6 +147,33 @@ pub const MODULE_PATH_UNKNOWN: &str = "unknown";
 pub enum Output {
     Stderr,
     Stdout,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ColorMode {
+    Auto,
+    Always,
+    Never
+}
+
+impl From<ColorMode> for bool {
+    fn from(s: ColorMode) -> bool {
+        match s {
+            ColorMode::Auto => atty::is(atty::Stream::Stdout) && atty::is(atty::Stream::Stderr),
+            ColorMode::Always => true,
+            ColorMode::Never => false,
+        }
+    }
+}
+
+impl<'a> From<&'a str> for ColorMode {
+    fn from(s: &str) -> ColorMode {
+        match s {
+            "Always" => ColorMode::Always,
+            "Never" => ColorMode::Never,
+            _ => ColorMode::Auto,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -189,7 +216,7 @@ impl Logger {
     /// | Trace | Grey          |
     pub fn new() -> Logger {
         Logger {
-            colors: DEFAULT_COLORS && atty::is(atty::Stream::Stdout) && atty::is(atty::Stream::Stderr),
+            colors: DEFAULT_COLORS.into(),
             include_level: DEFAULT_INCLUDE_LEVEL,
             include_line_numbers: DEFAULT_INCLUDE_LINE_NUMBERS,
             include_module_path: DEFAULT_INCLUDE_MODULE_PATH,
@@ -284,51 +311,29 @@ impl Logger {
 
     /// Enables or disables colorizing the output.
     ///
-    /// If the logger is _not_ used in a terminal, then the output is _not_ colorized regardless of
-    /// this value.
+    /// If this is not set, loggerv will use `ColorMode::Auto` behaviour:
+    /// The output is colorised if and only if the output is a terminal.
+    ///
+    /// ColorMode::Always and ColorMode::Never overrides this behavior.
     ///
     /// # Example
     ///
     /// ```rust
     /// #[macro_use] extern crate log;
     /// extern crate loggerv;
+    /// use loggerv::{Logger, ColorMode};
     ///
     /// fn main() {
-    ///     loggerv::Logger::new()
-    ///         .colors(false)
+    ///     Logger::new()
+    ///         .colors(ColorMode::Never)
     ///         .init()
     ///         .unwrap();
     ///
     ///     error!("This is printed without any colorization");
     /// }
     /// ```
-    pub fn colors(mut self, c: bool) -> Self {
-        self.colors = c && atty::is(atty::Stream::Stdout) && atty::is(atty::Stream::Stderr);
-        self
-    }
-
-    /// Disables colorizing the output.
-    ///
-    /// The default is to colorize the output unless `stdout` and `stderr` are redirected or piped,
-    /// i.e. not a tty.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// #[macro_use] extern crate log;
-    /// extern crate loggerv;
-    ///
-    /// fn main() {
-    ///     loggerv::Logger::new()
-    ///         .no_colors()
-    ///         .init()
-    ///         .unwrap();
-    ///
-    ///     error!("This is printed without any colorization");
-    /// }
-    /// ```
-    pub fn no_colors(mut self) -> Self {
-        self. colors = false;
+    pub fn colors(mut self, colormode: ColorMode) -> Self {
+        self.colors = colormode.into();
         self
     }
 
@@ -465,18 +470,18 @@ impl Logger {
         self
     }
 
-    /// Sets the module path filter list. 
-    /// 
+    /// Sets the module path filter list.
+    ///
     /// When any filter is matched as prefix of the log statement module path, the log
     /// statement will be logged if log level allows.
     /// Log statements not maching any filter will not be logged.
-    /// 
-    /// When not set (default) or set to empty Vec log statements will not be filtered 
+    ///
+    /// When not set (default) or set to empty Vec log statements will not be filtered
     /// by the module path.
-    /// 
+    ///
     /// # Example
     /// Log only messages comming from this program.
-    /// 
+    ///
     /// ```rust
     /// #[macro_use] extern crate log;
     /// extern crate loggerv;
@@ -496,17 +501,17 @@ impl Logger {
     }
 
     /// Adds module path filter to the list of module path filters.
-    /// 
+    ///
     /// When any filter is matched as prefix of the log statement module path, the log
     /// statement will be logged if log level allows.
     /// Log statements not maching any filter will not be logged.
-    /// 
-    /// When not filters were added log statements will not be filtered 
+    ///
+    /// When not filters were added log statements will not be filtered
     /// by the module path.
-    /// 
+    ///
     /// # Example
     /// Log only messages comming from this program.
-    /// 
+    ///
     /// ```rust
     /// #[macro_use] extern crate log;
     /// extern crate loggerv;
@@ -876,7 +881,7 @@ mod tests {
         assert_eq!(logger.include_level, DEFAULT_INCLUDE_LEVEL);
         assert_eq!(logger.include_line_numbers, DEFAULT_INCLUDE_LINE_NUMBERS);
         assert_eq!(logger.include_module_path, DEFAULT_INCLUDE_MODULE_PATH);
-        assert_eq!(logger.colors, DEFAULT_COLORS);
+        assert_eq!(logger.colors, DEFAULT_COLORS.into());
         assert_eq!(logger.level, DEFAULT_LEVEL);
         assert_eq!(logger.separator, String::from(DEFAULT_SEPARATOR));
         assert_eq!(logger.error.color, DEFAULT_ERROR_COLOR);
@@ -901,13 +906,13 @@ mod tests {
 
     #[test]
     fn colors_works() {
-        let logger = Logger::new().colors(false);
-        assert!(!logger.colors);
+        let logger = Logger::new().colors(ColorMode::Always);
+        assert!(logger.colors);
     }
 
     #[test]
     fn no_colors_works() {
-        let logger = Logger::new().no_colors();
+        let logger = Logger::new().colors(ColorMode::Never);
         assert!(!logger.colors);
     }
 

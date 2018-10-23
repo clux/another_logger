@@ -11,6 +11,7 @@
 extern crate ansi_term;
 #[macro_use] extern crate log;
 extern crate loggerv;
+use loggerv::{Logger, ColorMode};
 
 fn main() {
     // Add the following line near the beginning of the main function for an application to enable
@@ -22,11 +23,11 @@ fn main() {
     // non-windows platforms, a cfg guard should be put in place.
     #[cfg(windows)] ansi_term::enable_ansi_support().unwrap();
 
-    loggerv::Logger::new()
+    Logger::new()
         .max_level(log::Level::Info)
         .level(true)
         .no_module_path()
-        .no_colors()
+        .colors(ColorMode::Always)
         .init()
         .unwrap();
 

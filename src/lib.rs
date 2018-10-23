@@ -141,6 +141,7 @@ pub const DEFAULT_OFFSET: u64 = 1;
 pub const DEFAULT_SEPARATOR: &str = ": ";
 pub const DEFAULT_TRACE_COLOR: Colour = Colour::Fixed(8); // grey
 pub const DEFAULT_WARN_COLOR: Colour = Colour::Fixed(11); // bright yellow
+pub const MODULE_PATH_UNKNOWN: &str = "unknown";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Output {
@@ -169,6 +170,7 @@ pub struct Logger {
     info: Level,
     debug: Level,
     trace: Level,
+    module_path_filters: Vec<String>,
 }
 
 impl Logger {
@@ -214,7 +216,8 @@ impl Logger {
             trace: Level {
                 output: Output::Stderr,
                 color: DEFAULT_TRACE_COLOR,
-            }
+            },
+            module_path_filters: Vec::new(),
         }
     }
 
@@ -459,6 +462,66 @@ impl Logger {
     /// ```
     pub fn no_module_path(mut self) -> Self {
         self.include_module_path = false;
+        self
+    }
+
+    /// Sets the module path filter list. 
+    /// 
+    /// When any filter is matched as prefix of the log statement module path, the log
+    /// statement will be logged if log level allows.
+    /// Log statements not maching any filter will not be logged.
+    /// 
+    /// When not set (default) or set to empty Vec log statements will not be filtered 
+    /// by the module path.
+    /// 
+    /// # Example
+    /// Log only messages comming from this program.
+    /// 
+    /// ```rust
+    /// #[macro_use] extern crate log;
+    /// extern crate loggerv;
+    ///
+    /// fn main() {
+    ///     loggerv::Logger::new()
+    ///         .module_path_filters(vec![module_path!().to_owned()])
+    ///         .init()
+    ///         .unwrap();
+    ///
+    ///     error!("This is printed");
+    /// }
+    /// ```
+    pub fn module_path_filters(mut self, filters: Vec<String>) -> Self {
+        self.module_path_filters = filters;
+        self
+    }
+
+    /// Adds module path filter to the list of module path filters.
+    /// 
+    /// When any filter is matched as prefix of the log statement module path, the log
+    /// statement will be logged if log level allows.
+    /// Log statements not maching any filter will not be logged.
+    /// 
+    /// When not filters were added log statements will not be filtered 
+    /// by the module path.
+    /// 
+    /// # Example
+    /// Log only messages comming from this program.
+    /// 
+    /// ```rust
+    /// #[macro_use] extern crate log;
+    /// extern crate loggerv;
+    ///
+    /// fn main() {
+    ///     loggerv::Logger::new()
+    ///         .add_module_path_filter(module_path!())
+    ///         .init()
+    ///         .unwrap();
+    ///
+    ///     error!("This is printed");
+    /// }
+    /// ```
+    pub fn add_module_path_filter(mut self, filter: impl Into<String>) -> Self {
+        self.module_path_filters.push(filter.into());
         self
     }
 
@@ -711,7 +774,7 @@ impl Logger {
         };
 
         let module_path_text = if self.include_module_path {
-            let pth = record.module_path().unwrap_or("unknown");
+            let pth = record.module_path().unwrap_or(MODULE_PATH_UNKNOWN);
             if self.include_level {
                 format!(" [{}]", pth)
             } else {
@@ -744,6 +807,9 @@ impl log::Log for Logger {
 
     fn log(&self, record: &log::Record) {
         if self.enabled(record.metadata()) {
+            if !self.module_path_filters.is_empty() && !self.module_path_filters.iter().any(|filter| record.module_path().unwrap_or(MODULE_PATH_UNKNOWN).starts_with(filter)) {
+                return
+            }
             match self.select_output(&record.level()) {
                 Output::Stderr => {
                     writeln!(

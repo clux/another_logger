@@ -204,15 +204,15 @@ impl Logger {
                 color: DEFAULT_WARN_COLOR,
             },
             info: Level {
-                output: Output::Stdout,
+                output: Output::Stderr,
                 color: DEFAULT_INFO_COLOR,
             },
             debug: Level {
-                output: Output::Stdout,
+                output: Output::Stderr,
                 color: DEFAULT_DEBUG_COLOR,
             },
             trace: Level {
-                output: Output::Stdout,
+                output: Output::Stderr,
                 color: DEFAULT_TRACE_COLOR,
             }
         }

@@ -8,7 +8,7 @@ categories = ["command-line-utilities"]
 license = "MIT"
 name = "loggerv"
 repository = "https://github.com/clux/loggerv"
-version = "0.7.1"
+version = "0.7.2"
 readme = "README.md"
 
 [dependencies]

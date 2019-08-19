@@ -465,18 +465,18 @@ impl Logger {
         self
     }
 
-    /// Sets the module path filter list. 
-    /// 
+    /// Sets the module path filter list.
+    ///
     /// When any filter is matched as prefix of the log statement module path, the log
     /// statement will be logged if log level allows.
     /// Log statements not maching any filter will not be logged.
-    /// 
-    /// When not set (default) or set to empty Vec log statements will not be filtered 
+    ///
+    /// When not set (default) or set to empty Vec log statements will not be filtered
     /// by the module path.
-    /// 
+    ///
     /// # Example
     /// Log only messages comming from this program.
-    /// 
+    ///
     /// ```rust
     /// #[macro_use] extern crate log;
     /// extern crate loggerv;
@@ -496,17 +496,17 @@ impl Logger {
     }
 
     /// Adds module path filter to the list of module path filters.
-    /// 
+    ///
     /// When any filter is matched as prefix of the log statement module path, the log
     /// statement will be logged if log level allows.
     /// Log statements not maching any filter will not be logged.
-    /// 
-    /// When not filters were added log statements will not be filtered 
+    ///
+    /// When not filters were added log statements will not be filtered
     /// by the module path.
-    /// 
+    ///
     /// # Example
     /// Log only messages comming from this program.
-    /// 
+    ///
     /// ```rust
     /// #[macro_use] extern crate log;
     /// extern crate loggerv;
@@ -876,7 +876,7 @@ mod tests {
         assert_eq!(logger.include_level, DEFAULT_INCLUDE_LEVEL);
         assert_eq!(logger.include_line_numbers, DEFAULT_INCLUDE_LINE_NUMBERS);
         assert_eq!(logger.include_module_path, DEFAULT_INCLUDE_MODULE_PATH);
-        assert_eq!(logger.colors, DEFAULT_COLORS);
+        assert_eq!(logger.colors, DEFAULT_COLORS && atty::is(atty::Stream::Stdout) && atty::is(atty::Stream::Stderr));
         assert_eq!(logger.level, DEFAULT_LEVEL);
         assert_eq!(logger.separator, String::from(DEFAULT_SEPARATOR));
         assert_eq!(logger.error.color, DEFAULT_ERROR_COLOR);

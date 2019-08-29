@@ -67,7 +67,7 @@ $ cargo run --release --example cfg-config
 
 The number of log statements are displayed based on the build profile, either Debug or Release.
 
-## [Documentation](http://clux.github.io/loggerv)
+## [Documentation](https://docs.rs/loggerv)
 
 ## License
 

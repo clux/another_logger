@@ -32,4 +32,4 @@ jobs:
     machine: true
     steps:
       - checkout
-      - run: docker run --security-opt seccomp=unconfined -v "${PWD}:/volume" -e /bin/sh xd009642/tarpaulin cargo build && cargo tarpaulin --coveralls=${COVERALLS_REPO_TOKEN}
+      - run: docker run --security-opt seccomp=unconfined -v "${PWD}:/volume" -e /bin/sh xd009642/tarpaulin cargo tarpaulin --coveralls=${COVERALLS_REPO_TOKEN}

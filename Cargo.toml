@@ -2,7 +2,7 @@
 authors = ["Eirik Albrigtsen <sszynrae@gmail.com>",
            "Christopher Field <cfield2@gmail.com>"]
 description = "A simple log implementation that logs to stdout and stderr with colors"
-documentation = "http://clux.github.io/loggerv"
+documentation = "https://docs.rs/loggerv"
 keywords = ["log", "logger", "stdio", "cli"]
 categories = ["command-line-utilities"]
 license = "MIT"

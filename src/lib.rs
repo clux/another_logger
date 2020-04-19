@@ -307,6 +307,28 @@ impl Logger {
         self
     }
 
+    /// Enables colorizing the output regardless if logger is used in a terminal or not.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// #[macro_use] extern crate log;
+    /// extern crate loggerv;
+    ///
+    /// fn main() {
+    ///     loggerv::Logger::new()
+    ///         .force_colors()
+    ///         .init()
+    ///         .unwrap();
+    ///
+    ///     error!("This is always printed with colorization");
+    /// }
+    /// ```
+    pub fn force_colors(mut self) -> Self {
+        self.colors = true;
+        self
+    }
+
     /// Disables colorizing the output.
     ///
     /// The default is to colorize the output unless `stdout` and `stderr` are redirected or piped,
